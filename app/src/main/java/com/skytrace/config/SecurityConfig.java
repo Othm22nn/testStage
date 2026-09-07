@@ -59,10 +59,16 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(errors -> errors.authenticationEntryPoint((request, response, exception) -> {
+                response.setStatus(401);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"message\":\"Session absente ou expiree\"}");
+            }))
             .authorizeHttpRequests(auth -> auth
                 // Public : connexion + suivi passager (sans compte, comme dans le prototype)
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/bagages/suivi/**").permitAll()
+                .requestMatchers("/actuator/health", "/assets/**").permitAll()
                 .requestMatchers(
                     "/", "/index.html", "/prototype_final.html", "/skytrace-api.js",
                     "/royal_logo.png", "/favicon.ico", "/error"

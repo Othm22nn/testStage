@@ -18,6 +18,11 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    @jakarta.annotation.PostConstruct
+    void validateConfiguration() {
+        getSigningKey();
+    }
+
     @Value("${jwt.secret}")
     private String secret;
 
