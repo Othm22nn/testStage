@@ -2,7 +2,7 @@
 set -eu
 
 PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-MAVEN_HOME="$PROJECT_DIR/.mvn/wrapper/apache-maven-3.8.8"
+MAVEN_HOME="$PROJECT_DIR/.mvn/wrapper/apache-maven-3.9.9"
 
 if [ ! -x "$MAVEN_HOME/bin/mvn" ]; then
   echo "Maven embarque introuvable : $MAVEN_HOME/bin/mvn" >&2
