@@ -13,4 +13,4 @@ Architecture : un monolithe Spring Boot, SQL Server, HTML/CSS/JavaScript natifs.
 Pas de microservices, broker, cache distribué ou framework frontend ajouté.
 
 La base existante n'est pas utilisée pour les tests. Les vérifications exécutées
-et les limites de l'environnement seront consignées dans `VALIDATION.md`.
+et les limites de l'environnement sont consignées dans `VALIDATION.md`.
