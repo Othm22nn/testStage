@@ -123,5 +123,8 @@ class ApiIntegrationTest {
                 .andExpect(status().isUnauthorized());
         mvc.perform(get("/api/bagages/suivi/UNKNOWN")).andExpect(status().isNotFound());
         mvc.perform(get("/actuator/health")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
+        mvc.perform(get("/assets/app.js").header("Host", "localhost:9080")
+                .header("Origin", "http://localhost:9080").header("X-Forwarded-Host", "localhost:9080")
+                .header("X-Forwarded-Proto", "http")).andExpect(status().isOk());
     }
 }

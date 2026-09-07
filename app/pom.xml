@@ -18,6 +18,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<lombok.version>1.18.46</lombok.version>
+		<browser.test.exclude>**/BrowserE2ETest.java</browser.test.exclude>
 	</properties>
 
 	<dependencies>
@@ -119,8 +120,38 @@
 		</dependency>
 	</dependencies>
 
+	<profiles>
+		<profile>
+			<id>e2e</id>
+			<properties><browser.test.exclude>**/NoBrowserTests.java</browser.test.exclude></properties>
+			<dependencies>
+				<dependency>
+					<groupId>com.microsoft.playwright</groupId>
+					<artifactId>playwright</artifactId>
+					<version>1.58.0</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+			<build><plugins><plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.5.0</version>
+				<executions><execution>
+					<id>e2e-tests</id><phase>generate-test-sources</phase>
+					<goals><goal>add-test-source</goal></goals>
+					<configuration><sources><source>src/e2e/java</source></sources></configuration>
+				</execution></executions>
+			</plugin></plugins></build>
+		</profile>
+	</profiles>
+
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration><excludes><exclude>${browser.test.exclude}</exclude></excludes></configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
