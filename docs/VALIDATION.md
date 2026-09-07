@@ -30,8 +30,9 @@ Limites connues :
 
 - Le navigateur intégré n'a pas pu être initialisé dans cette session ; le parcours
   est exécuté avec Playwright Java et Microsoft Edge en arrière-plan.
-- Le moteur Docker n'est pas installé. La configuration Compose peut être validée,
-  mais la construction des images et le démarrage des conteneurs ne sont pas attestés localement.
+- Docker Desktop est installé ; son moteur attend le redémarrage Windows nécessaire
+  à la virtualisation. La construction des images et le démarrage des conteneurs
+  ne sont donc pas encore attestés localement.
 - La CI inclut la construction et l'E2E via Compose ; elle n'a pas été exécutée sur GitHub.
 - SQL Server local est en version 2025. Flyway signale cette version comme plus récente
   que celles couvertes officiellement par sa version embarquée ; les résultats locaux sont consignés ci-dessous.
@@ -39,3 +40,25 @@ Limites connues :
 Références utilisées pour le déploiement et les tests :
 [ordre de démarrage Compose](https://docs.docker.com/compose/how-tos/startup-order/),
 [navigateurs Playwright Java](https://playwright.dev/java/docs/browsers).
+
+## Préparation Docker du poste
+
+- Docker Desktop 4.90.0 installé dans `D:\DockerDesktop` ; données WSL Docker
+  configurées dans `D:\DockerData`. Installateur officiel signé et SHA-256 vérifié.
+- CLI Docker 29.7.2 et Compose 5.5.1 vérifiées ; `compose config --quiet` réussi.
+- WSL 2.7.13.0 installé depuis le MSI Microsoft signé, SHA-256 vérifié.
+- Fonctionnalités Windows WSL et VirtualMachinePlatform activées sans redémarrage.
+- Réglage Lenovo `VirtualizationTechnology=Enable` enregistré avec succès.
+  Il ne prendra effet qu'après redémarrage ; aucun autre réglage BIOS modifié.
+- C: reste très contraint (environ 0,5 Go libre après installation des composants
+  Windows). Ne pas y télécharger les images ni y déplacer les données Docker.
+
+Reprise après redémarrage : démarrer Docker Desktop, vérifier `docker info`,
+puis exécuter `docker compose up -d --build --wait --wait-timeout 240` à la racine.
+Conserver le `.env` existant. Valider ensuite le parcours navigateur contre
+`http://localhost:8080` avec `E2E_BASE_URL` et `E2E_ADMIN_PASSWORD` issu du `.env`,
+puis consigner le résultat réel ici. Aucun conteneur SkyTrace n'a encore été créé.
+
+Références : [installation Docker Windows](https://docs.docker.com/desktop/setup/install/windows-install/),
+[installation WSL](https://learn.microsoft.com/en-us/windows/wsl/install),
+[configuration BIOS Lenovo](https://docs.lenovocdrt.com/ref/bios/wmi/wmi_guide/).
