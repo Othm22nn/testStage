@@ -19,6 +19,40 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ApiIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired com.skytrace.bagages.BagageRepository bagages;
+    @Autowired com.skytrace.vols.VolRepository vols;
+    @Autowired com.skytrace.utilisateurs.UtilisateurRepository utilisateurs;
+    @Autowired com.skytrace.scans.ScanRepository scans;
+    @Autowired com.skytrace.scans.ScanService scanService;
+
+    @Test
+    void concurrentScansOnlyAdvanceOnce() throws Exception {
+        var user = utilisateurs.save(com.skytrace.utilisateurs.Utilisateur.builder().nom("Concurrent test")
+                .login("concurrent").motDePasse("unused").role(com.skytrace.utilisateurs.RoleUtilisateur.AGENT_MANUTENTION).build());
+        var flight = vols.save(com.skytrace.vols.Vol.builder().numeroVol("AT-CONCURRENT").origine("CMN")
+                .destination("ORY").dateVol(java.time.LocalDateTime.now()).build());
+        var bag = bagages.save(com.skytrace.bagages.Bagage.builder().codeQr("BAG-CONCURRENT")
+                .statut(com.skytrace.bagages.StatutBagage.ENREGISTREMENT).vol(flight).build());
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
+            java.util.concurrent.Callable<Boolean> task = () -> {
+                start.await();
+                var request = new com.skytrace.scans.ScanRequest();
+                request.setCodeQr(bag.getCodeQr());
+                request.setStatutAttendu(com.skytrace.bagages.StatutBagage.ENREGISTREMENT);
+                try { scanService.scanner(request, user.getLogin()); return true; }
+                catch (com.skytrace.shared.BusinessException expected) { return false; }
+            };
+            var first = executor.submit(task);
+            var second = executor.submit(task);
+            start.countDown();
+            assertThat(java.util.List.of(first.get(15, java.util.concurrent.TimeUnit.SECONDS),
+                    second.get(15, java.util.concurrent.TimeUnit.SECONDS))).containsExactlyInAnyOrder(true, false);
+        }
+        assertThat(scans.findByBagageIdOrderByHeureAsc(bag.getId())).hasSize(1);
+        assertThat(bagages.findById(bag.getId()).orElseThrow().getStatut())
+                .isEqualTo(com.skytrace.bagages.StatutBagage.DEPOT_TAPIS);
+    }
 
     String login(String name, String password) throws Exception {
         return json.readTree(mvc.perform(post("/api/auth/login").contentType("application/json")
@@ -55,15 +89,17 @@ class ApiIntegrationTest {
         mvc.perform(delete("/api/vols/" + flight.get("id")).header("Authorization", "Bearer " + admin))
                 .andExpect(status().isConflict());
         mvc.perform(post("/api/scans").header("Authorization", "Bearer " + agent)
-                .contentType("application/json").content("{\"codeQr\":\"" + code + "\"}"))
+                .contentType("application/json").content("{\"codeQr\":\"" + code + "\",\"statutAttendu\":\"ENREGISTREMENT\"}"))
                 .andExpect(status().isForbidden());
+        String expected = "ENREGISTREMENT";
         for (String step : new String[]{"DEPOT_TAPIS", "TRI_TRANSFERT", "CHARGEMENT", "DECHARGEMENT", "LIVRAISON"}) {
             mvc.perform(post("/api/scans").header("Authorization", "Bearer " + handler)
-                    .contentType("application/json").content("{\"codeQr\":\"" + code + "\"}"))
+                    .contentType("application/json").content("{\"codeQr\":\"" + code + "\",\"statutAttendu\":\"" + expected + "\"}"))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.statut").value(step));
+            expected = step;
         }
         mvc.perform(post("/api/scans").header("Authorization", "Bearer " + handler)
-                .contentType("application/json").content("{\"codeQr\":\"" + code + "\"}"))
+                .contentType("application/json").content("{\"codeQr\":\"" + code + "\",\"statutAttendu\":\"" + expected + "\"}"))
                 .andExpect(status().isConflict());
         JsonNode anomaly = json.readTree(mvc.perform(post("/api/anomalies")
                 .header("Authorization", "Bearer " + supervisor).contentType("application/json")
