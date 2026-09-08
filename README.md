@@ -79,3 +79,9 @@ La CI prépare Chromium et exécute le parcours E2E contre la stack Compose.
 
 Pour la review : [ordre des commits](docs/REVIEW.md), [architecture](docs/ARCHITECTURE.md),
 [preuves et limites](docs/VALIDATION.md).
+
+## Sauvegarder la base Docker
+
+Depuis la racine : `.\scripts\Backup-SkyTrace.ps1`.
+Le script copie la sauvegarde sur D: et vérifie sa restauration dans une base temporaire.
+Voir le [guide de sauvegarde](docs/BACKUP.md) pour les détails et la conservation.
