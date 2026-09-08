@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyTrace — Suivi des bagages</title>
+<link rel="icon" href="/royal_logo.png" type="image/png">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <div class="header-content">
+      <div class="logo-ram">
+        <img src="royal_logo.png" alt="Royal Air Maroc" class="logo-img">
+      </div>
+      <div>
+        <div class="eyebrow">RAM — Plateforme de traçabilité</div>
+        <h1>SkyTrace</h1>
+      </div>
+    </div>
+    <div class="session-info" id="session-info"></div>
+  </div>
+</header>
+
+<nav id="nav-container"></nav>
+
+<main>
+<div id="message" class="notice" role="status" aria-live="polite" hidden></div>
+
+  <!-- CONNEXION -->
+  <section id="connexion" class="panel">
+    <div class="login-wrap">
+      <h2>Connexion</h2>
+      <p class="sub">Réservé aux agents, superviseurs et administrateurs.</p>
+      <div class="card">
+        <div class="login-error" id="login-error">Identifiant ou mot de passe incorrect.</div>
+        <label for="login-user">Identifiant</label>
+        <input id="login-user" autocomplete="username" placeholder="">
+        <label for="login-pass">Mot de passe</label>
+        <input id="login-pass" autocomplete="current-password" type="password" placeholder="••••••••">
+        <button class="primary" data-action="seConnecter">Se connecter</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENT ENREGISTREMENT -->
+  <section id="enregistrement" class="panel">
+    <h2>Enregistrer un nouveau bagage</h2>
+    <p class="sub">Génère automatiquement un code QR unique pour le passager.</p>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="in-nom">Nom du passager</label>
+          <input id="in-nom" placeholder="ex: Karim Benali">
+        </div>
+        <div>
+          <label for="in-vol">Numéro de vol</label>
+          <input id="in-vol" placeholder="ex: AT123">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="in-origine">Origine</label>
+          <input id="in-origine" value="Casablanca (CMN)" placeholder="ex: Casablanca (CMN)">
+        </div>
+        <div>
+          <label for="in-dest">Destination</label>
+          <input id="in-dest" placeholder="ex: Paris (CDG)">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="in-date-vol">Date et heure du vol</label>
+          <input id="in-date-vol" type="datetime-local">
+        </div>
+        <div>
+          <label for="in-poids">Poids (kg)</label>
+          <input id="in-poids" type="number" min="0.1" max="99.99" step="0.01" placeholder="ex: 18.5">
+        </div>
+      </div>
+      <button class="primary" data-action="enregistrerBagage">Enregistrer le bagage</button>
+    </div>
+
+    <div id="dernier-bagage"></div>
+  </section>
+
+  <!-- AGENT MANUTENTION -->
+  <section id="manutention" class="panel">
+    <h2>Scanner un bagage</h2>
+    <p class="sub">Enregistre le passage du bagage à chaque étape : dépôt, tri, chargement, déchargement, livraison.</p>
+    <div class="card">
+      <label for="select-scan">Sélectionner un bagage (code QR)</label>
+      <select id="select-scan" data-change="renderScanPreview"></select>
+      <div id="scan-preview"></div>
+      <div class="actions">
+        <button class="primary" data-action="scannerBagage">Scanner — passer à l'étape suivante</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUPERVISEUR -->
+  <section id="superviseur" class="panel">
+    <h2>Tableau de bord superviseur</h2>
+    <p class="sub">Vue d'ensemble de tous les bagages en cours de traitement.</p>
+
+    <label for="filter-bagages">Rechercher un bagage</label>
+    <input id="filter-bagages" type="search" placeholder="Code, passager ou vol">
+    <button class="ghost" data-action="chargerBagagesDepuisApi">Actualiser les données</button>
+    <div class="stat-cards">
+      <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Bagages suivis</div></div>
+      <div class="stat"><div class="num" id="stat-livres">0</div><div class="lbl">Livrés</div></div>
+      <div class="stat"><div class="num" id="stat-anomalies">0</div><div class="lbl">Anomalies</div></div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Code</th><th>Passager</th><th>Vol</th><th>Statut</th><th>Enregistrement</th><th>Action</th></tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div id="table-empty" class="empty">Aucun bagage enregistré pour le moment.</div>
+    </div>
+  </section>
+
+  <!-- ADMINISTRATEUR -->
+  <section id="administrateur" class="panel">
+    <h2>Administration des utilisateurs</h2>
+    <p class="sub">Créer, consulter et supprimer les comptes des agents, superviseurs et administrateurs.</p>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="admin-nom">Nom complet</label>
+          <input id="admin-nom" placeholder="ex: Nadia Chraibi">
+        </div>
+        <div>
+          <label for="admin-login">Identifiant de connexion</label>
+          <input id="admin-login" placeholder="ex: nchraibi">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="admin-pass">Mot de passe</label>
+          <input id="admin-pass" autocomplete="new-password" type="password" placeholder="••••••••">
+        </div>
+        <div>
+          <label for="admin-role">Rôle</label>
+          <select id="admin-role">
+            <option value="AGENT_ENREGISTREMENT">Agent d'enregistrement</option>
+            <option value="AGENT_MANUTENTION">Agent de manutention</option>
+            <option value="SUPERVISEUR">Superviseur</option>
+            <option value="ADMINISTRATEUR">Administrateur</option>
+          </select>
+        </div>
+      </div>
+      <button class="primary" data-action="ajouterUtilisateur">Créer l'utilisateur</button>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Nom</th><th>Identifiant</th><th>Rôle</th><th></th></tr>
+        </thead>
+        <tbody id="utilisateurs-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- PASSAGER -->
+  <section id="passager" class="panel">
+    <h2>Suivre mon bagage</h2>
+    <p class="sub">Le passager scanne le QR code reçu à l'enregistrement — aucune connexion requise.</p>
+    <div class="card">
+      <label for="passager-code-input">Code du bagage</label>
+      <input id="passager-code-input" placeholder="BAG-…" autocomplete="off">
+      <button class="primary" data-action="afficherSuiviPassager">Suivre</button>
+    </div>
+    <div id="suivi-passager"></div>
+  </section>
+
+</main>
+<script type="module" src="/assets/app.js"></script>
+
+</body>
+</html>

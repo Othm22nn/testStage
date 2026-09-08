@@ -1,0 +1,10 @@
+.idea/
+.vscode/
+**/target/
+**/.mvn/wrapper/apache-maven-*/
+**/.mvn/wrapper/dists/
+.env
+.env.*
+!.env.example
+*.log
+artifacts/
